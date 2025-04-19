@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>TellFinder</title>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Nunito', sans-serif;
+      background-color: #121212;
+      color: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    .container {
+      text-align: center;
+      width: 100%;
+      max-width: 600px;
+      padding: 20px;
+    }
+
+    h1 {
+      color: #1abc9c;
+      font-size: 2.5rem;
+    }
+
+    .input-section input {
+      padding: 10px;
+      margin: 10px;
+      width: 80%;
+      border-radius: 5px;
+      border: 1px solid #1abc9c;
+      background-color: #2c3e50;
+      color: white;
+    }
+
+    button {
+      padding: 10px 20px;
+      background-color: #1abc9c;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #16a085;
+    }
+
+    .label-section {
+      margin-top: 30px;
+      font-size: 1.4rem;
+      color: #1abc9c;
+    }
+
+    .result-section {
+      margin-top: 10px;
+      max-height: 300px;
+      overflow-y: auto;
+      padding: 15px;
+      background-color: #1e1e1e;
+      border-radius: 10px;
+      box-shadow: 0 0 12px rgba(0,255,255,0.1);
+      scrollbar-width: thin;
+    }
+
+    .result-section::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .result-section::-webkit-scrollbar-thumb {
+      background-color: #1abc9c;
+      border-radius: 4px;
+    }
+
+    .result-section p {
+      margin: 10px 0;
+      text-align: left;
+    }
+
+    .loader {
+      border: 6px solid #f3f3f3;
+      border-top: 6px solid #1abc9c;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 20px auto;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .flag-icon {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      vertical-align: middle;
+      margin-right: 8px;
+      object-fit: cover;
+      border: 1px solid #fff;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>TellFinder</h1>
+    <div class="input-section">
+      <label for="phone">Digite o número:</label><br/>
+      <input type="text" id="phone" placeholder="91xxxxxxx ou +24491xxxxxxx">
+      <br/>
+      <button onclick="checkPhoneNumber()">Consultar</button>
+    </div>
+
+    <div class="label-section" id="labelResult" style="display: none;">
+      <strong>Resultados da consulta:</strong>
+    </div>
+
+    <div class="result-section" id="result"></div>
+  </div>
+
+  <script>
+    function checkPhoneNumber() {
+      const input = document.getElementById("phone");
+      const result = document.getElementById("result");
+      const label = document.getElementById("labelResult");
+      let phone = input.value.trim();
+
+      if (!phone.startsWith("+")) {
+        if (phone.startsWith("244")) {
+          phone = "+" + phone;
+        } else {
+          phone = "+244" + phone;
+        }
+      }
+
+      result.innerHTML = `<div class="loader"></div>`;
+      label.style.display = "block";
+
+      const apiKey = "b667d5e622d1473388ccecf3e1cdd6f0";
+      const url = `https://phonevalidation.abstractapi.com/v1/?api_key=${apiKey}&phone=${encodeURIComponent(phone)}`;
+
+      fetch(url)
+        .then(response => response.json())
+        .then(data => {
+          if (data.valid) {
+            const flagUrl = `https://flagcdn.com/24x18/${data.country.code.toLowerCase()}.png`;
+
+            result.innerHTML = `
+              <p><strong>Número:</strong> ${data.format.international || 'N/A'}</p>
+              <p><strong>País:</strong> <img class="flag-icon" src="${flagUrl}" alt="Bandeira"> ${data.country.name || 'N/A'}</p>
+              <p><strong>Operadora:</strong> ${data.carrier || 'Não disponível'}</p>
+              <p><strong>Tipo de número:</strong> ${data.line_type || 'Não identificado'}</p>
+              <p><strong>Região:</strong> ${data.location || 'Não disponível'}</p>
+              <p><strong>Prefixo do país:</strong> +${data.country.prefix || 'N/A'}</p>
+              <p><strong>Formato local:</strong> ${data.format.local || 'N/A'}</p>
+              <p><strong>Formato E164:</strong> ${data.format.e164 || 'N/A'}</p>
+              <p><strong>Validação:</strong> ${data.valid ? 'Válido' : 'Inválido'}</p>
+              <p><strong>Tipo de país:</strong> ${data.country.type || 'N/A'}</p>
+            `;
+          } else {
+            result.innerHTML = `<p>Número inválido ou não reconhecido.</p>`;
+          }
+        })
+        .catch(error => {
+          console.error(error);
+          result.innerHTML = `<p>Erro ao consultar. Verifique a sua rede ou tente novamente mais tarde.</p>`;
+        });
+    }
+  </script>
+</body>
+</html>
